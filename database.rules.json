@@ -1,0 +1,79 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+
+    "sessions": {
+      "$code": {
+        ".read": "auth != null",
+        ".write": "auth != null && !data.exists() && newData.child('hostId').val() === auth.uid && newData.child('code').val() === $code",
+
+        "hostId": {
+          ".write": "auth != null && data.parent().child('hostId').val() === auth.uid"
+        },
+        "code": {
+          ".write": "auth != null && data.parent().child('hostId').val() === auth.uid && newData.val() === $code"
+        },
+        "config": {
+          ".write": "auth != null && data.parent().child('hostId').val() === auth.uid",
+          ".validate": "newData.hasChildren(['groups','questionIds','secondsPerTurn','pointsPerCorrect']) && newData.child('secondsPerTurn').isNumber() && newData.child('secondsPerTurn').val() >= 5 && newData.child('secondsPerTurn').val() <= 600 && newData.child('pointsPerCorrect').isNumber() && newData.child('pointsPerCorrect').val() >= 0 && newData.child('pointsPerCorrect').val() <= 10000"
+        },
+        "state": {
+          ".write": "auth != null && data.parent().child('hostId').val() === auth.uid",
+          ".validate": "newData.hasChildren(['config','questionIndex','turnCount','events','finished'])"
+        },
+        "updatedAt": {
+          ".write": "auth != null && data.parent().child('hostId').val() === auth.uid",
+          ".validate": "newData.isNumber()"
+        },
+
+        "participants": {
+          "$uid": {
+            ".write": "auth != null && auth.uid === $uid && data.parent().parent().child('hostId').exists()",
+            ".validate": "newData.hasChildren(['name','joinedAt']) && newData.child('name').isString() && newData.child('name').val().length >= 1 && newData.child('name').val().length <= 40 && newData.child('joinedAt').isNumber()"
+          }
+        },
+
+        "answers": {
+          "$uid": {
+            "$answerId": {
+              ".write": "auth != null && auth.uid === $uid && !data.exists()",
+              ".validate": "newData.hasChildren(['questionId','answer','durationMs','timestamp']) && newData.child('questionId').isString() && newData.child('questionId').val().length <= 80 && newData.child('answer').isString() && newData.child('answer').val().length >= 1 && newData.child('answer').val().length <= 24 && newData.child('durationMs').isNumber() && newData.child('durationMs').val() >= 0 && newData.child('durationMs').val() <= 3600000 && newData.child('timestamp').isNumber()"
+            }
+          }
+        },
+
+        "validated": {
+          ".read": "auth != null && data.parent().child('hostId').val() === auth.uid",
+          ".write": false,
+          "$uid": {
+            "$answerId": {
+              ".write": "auth != null && data.parent().parent().parent().child('hostId').val() === auth.uid",
+              ".validate": "newData.hasChildren(['correct','points','gradedAt'])"
+            }
+          }
+        }
+      }
+    },
+
+    "questionBank": {
+      ".read": "auth != null",
+      "$questionId": {
+        ".write": false,
+        ".validate": "newData.hasChildren(['prompt','answer','difficulty','updatedAt']) && newData.child('answer').isString() && newData.child('answer').val().matches(/^[A-Z]{1,24}$/)"
+      }
+    },
+
+    "users": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && auth.uid === $uid",
+        "$entity": {
+          "$entityId": {
+            ".validate": "newData.hasChild('updatedAt') && newData.child('updatedAt').isNumber()"
+          }
+        }
+      }
+    }
+  }
+}
